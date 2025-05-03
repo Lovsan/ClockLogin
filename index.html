@@ -93,7 +93,19 @@
       font-size: 40px;
       user-select: none;
       opacity: 0;
-      transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    }
+
+    /* Target-hint badge */
+    #target-hint {
+      position: fixed; top: 20px; right: 20px;
+      font-size: 2rem; color: #fff;
+      text-shadow: 0 0 10px #0ff;
+      animation: pulseHint 1.5s infinite alternate;
+      z-index: 6;
+    }
+    @keyframes pulseHint {
+      to { text-shadow: 0 0 20px #0ff; color: #0ff; }
     }
   </style>
 </head>
@@ -107,6 +119,10 @@
     <div class="center-dot"></div>
   </div>
 
+  <!-- TARGET HINT BADGE -->
+  <div id="target-hint"></div>
+
+  <!-- SUCCESS MESSAGE -->
   <div id="login-modal" class="modal hidden">
     taidan sit joutuu tulee pelaaman :(<br/>
     onnittelut koodin aukaisusta!
@@ -114,14 +130,13 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // ⚙️ CONFIG
+      // ⚙️ CONFIGURATION
       const CONFIG = {
-        colorInterval: 5000,   // reshuffle every 5 s
-        blinkInterval: 15000,  // spawn blinks every 15 s
-        blinkCount:    5       // 5 symbols per blink cycle
+        colorInterval: 5000,  // ms between color reshuffles
+        spawnInterval: 800,   // ms between floating target spawns
+        spawnLifetime: 2000   // ms each floating remains visible
       };
 
-      // Symbol definitions
       const SYMBOLS = {
         red:    ['!','@','#','$'],
         violet: ['%','^','&','*'],
@@ -135,13 +150,15 @@
       const clock   = document.querySelector('.clock');
       const numsCon = clock.querySelector('.numbers');
       const modal   = document.getElementById('login-modal');
+      const hint    = document.getElementById('target-hint');
 
-      // Pick a single TARGET for all 12
+      // Pick one TARGET symbol for all 12
       const allSyms = COLORS.flatMap(c => SYMBOLS[c]);
       const TARGET  = allSyms[Math.floor(Math.random()*allSyms.length)];
       console.log('🔑 Target symbol:', TARGET);
+      hint.textContent = TARGET;
 
-      // Build face
+      // Build clock face
       for (let i = 0; i < TOTAL; i++) {
         const el = document.createElement('div');
         el.className     = 'number';
@@ -149,7 +166,7 @@
         el.dataset.index = i;
         const angle      = (i/TOTAL)*360 - 90;
         const r          = clock.clientWidth/2 - 40;
-        el.style.transform = 
+        el.style.transform =
           `rotate(${angle}deg) translate(${r}px) rotate(${-angle}deg)`;
         numsCon.appendChild(el);
       }
@@ -172,7 +189,7 @@
       setInterval(tick,1000);
       tick();
 
-      // Shuffle colors (but keep whatever text the user clicked)
+      // Reshuffle glow-colors, preserve any clicked symbols
       function shuffleColors(){
         elems.forEach(el=>{
           COLORS.forEach(c=>el.classList.remove('glow-'+c));
@@ -188,56 +205,48 @@
         const el = e.target.closest('.number');
         if (!el) return;
         clickCount++;
-        // find its glow color
         const glow = [...el.classList].find(c=>c.startsWith('glow-'));
         const color = glow.split('-')[1];
         const arr   = SYMBOLS[color];
         const t     = el.textContent;
-        // cycle: number → arr[0] → next …
         let next = arr[0];
-        if (arr.includes(t)) next = arr[(arr.indexOf(t)+1)%arr.length];
+        if (arr.includes(t)) next = arr[(arr.indexOf(t)+1) % arr.length];
         el.textContent = next;
 
-        // count correct
-        const correct = elems.filter(x => x.textContent === TARGET).length;
+        const correct = elems.filter(x=>x.textContent===TARGET).length;
         console.log(`Clicks: ${clickCount}, Correct: ${correct}/${TOTAL}`);
         if (correct === TOTAL) modal.classList.remove('hidden');
       });
 
-      // Floating TARGET blinks
+      // Continuous floating TARGET symbols
       function spawnFloating(){
         const node = document.createElement('div');
         node.className   = 'floating';
         node.textContent = TARGET;
-        // random position & scale
-        node.style.top      = Math.random()*100 + '%';
-        node.style.left     = Math.random()*100 + '%';
-        node.style.fontSize = (20 + Math.random()*60) + 'px';
+        node.style.top   = Math.random()*100 + '%';
+        node.style.left  = Math.random()*100 + '%';
+        node.style.fontSize = (30 + Math.random()*50) + 'px';
         document.body.appendChild(node);
-        // fade in + slight move
-        requestAnimationFrame(() => {
-          node.style.opacity   = 0.6;
-          node.style.transform = `translate(-50%,-50%) scale(1.2)`;
+
+        // fade in
+        requestAnimationFrame(()=>{
+          node.style.opacity = 0.6;
+          node.style.transform = 'translate(-50%,-50%) scale(1.2)';
         });
         // fade out & remove
-        setTimeout(() => {
+        setTimeout(()=>{
           node.style.opacity = 0;
-          setTimeout(()=> node.remove(), 1000);
-        }, 2000);
+          setTimeout(()=> node.remove(), 500);
+        }, CONFIG.spawnLifetime);
+      }
+      // start continuous spawn
+      setInterval(spawnFloating, CONFIG.spawnInterval);
+      // initial burst so you see it immediately
+      for (let i=0; i<CONFIG.blinkCount || 5; i++){
+        setTimeout(spawnFloating, i * 200);
       }
 
-      // initial bursts
-      for (let i = 0; i < CONFIG.blinkCount; i++) {
-        setTimeout(spawnFloating, i * 400);
-      }
-      // recurring
-      setInterval(() => {
-        for (let i = 0; i < CONFIG.blinkCount; i++) {
-          setTimeout(spawnFloating, i * 400);
-        }
-      }, CONFIG.blinkInterval);
-
-      // Block view‐source / DevTools
+      // block view‐source / DevTools
       document.addEventListener('contextmenu', e => {
         e.preventDefault();
         alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
