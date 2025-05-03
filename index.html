@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Secret Clock Lock</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet"/>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
   <style>
     /* Dark theme & clock styling */
     body {
@@ -13,6 +16,7 @@
       color: #ccc;
       font-family: 'Orbitron', sans-serif;
       overflow: hidden;
+      position: relative;
     }
     .clock {
       position: relative;
@@ -25,6 +29,7 @@
         0 0 30px rgba(0,255,255,0.1);
       margin: auto;
       top: 50%; transform: translateY(-50%);
+      z-index: 2;
     }
     .ring {
       position: absolute; top:0; left:0;
@@ -75,24 +80,24 @@
       position: fixed; top:0; left:0; width:100%; height:100%;
       background: rgba(0,0,0,0.8);
       display: flex; align-items: center; justify-content: center;
-      z-index: 10; color: #0f0; font-size: 1.2rem;
+      z-index: 5; color: #0f0; font-size: 1.2rem;
       text-align: center; padding: 20px;
     }
     .modal.hidden { display: none; }
 
     /* Floating symbol style */
     .floating {
-      position: fixed; pointer-events: none;
-      color: rgba(0,255,255,0.1);
+      position: absolute;
+      pointer-events: none;
+      color: #0ff;
       font-size: 40px;
       user-select: none;
       opacity: 0;
-      transition: opacity 0.5s ease-in-out;
+      transition: opacity 1s ease-in-out, transform 1s ease-in-out;
     }
   </style>
 </head>
 <body>
-
   <div class="clock">
     <div class="ring"></div>
     <div class="numbers"></div>
@@ -108,135 +113,141 @@
   </div>
 
   <script>
-    // ⚙️ CONFIGURATION
-    const CONFIG = {
-      colorInterval: 5000,      // ms between color reshuffles
-      blinkInterval: 15000,     // ms between background blinks
-      blinkCount:    5,         // how many blinks per cycle
-    };
+    document.addEventListener('DOMContentLoaded', () => {
+      // ⚙️ CONFIG
+      const CONFIG = {
+        colorInterval: 5000,   // reshuffle every 5 s
+        blinkInterval: 15000,  // spawn blinks every 15 s
+        blinkCount:    5       // 5 symbols per blink cycle
+      };
 
-    const SYMBOLS = {
-      red:    ['!','@','#','$'],
-      violet: ['%','^','&','*'],
-      green:  ['(',')','-','='],
-      yellow: ['+','<','>','?']
-    };
-    const COLORS  = Object.keys(SYMBOLS);
-    const NUMBERS = ['12','1','2','3','4','5','6','7','8','9','10','11'];
-    const TOTAL   = NUMBERS.length;
+      // Symbol definitions
+      const SYMBOLS = {
+        red:    ['!','@','#','$'],
+        violet: ['%','^','&','*'],
+        green:  ['(',')','-','='],
+        yellow: ['+','<','>','?']
+      };
+      const COLORS  = Object.keys(SYMBOLS);
+      const NUMBERS = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+      const TOTAL   = NUMBERS.length;
 
-    const clock   = document.querySelector('.clock');
-    const numsCon = clock.querySelector('.numbers');
-    const modal   = document.getElementById('login-modal');
+      const clock   = document.querySelector('.clock');
+      const numsCon = clock.querySelector('.numbers');
+      const modal   = document.getElementById('login-modal');
 
-    // pick one target symbol for all 12
-    const allSyms = COLORS.flatMap(c => SYMBOLS[c]);
-    const TARGET  = allSyms[Math.floor(Math.random()*allSyms.length)];
-    console.log('🔑 Target symbol:', TARGET);
+      // Pick a single TARGET for all 12
+      const allSyms = COLORS.flatMap(c => SYMBOLS[c]);
+      const TARGET  = allSyms[Math.floor(Math.random()*allSyms.length)];
+      console.log('🔑 Target symbol:', TARGET);
 
-    // build clock face
-    for(let i=0; i<TOTAL; i++){
-      const el = document.createElement('div');
-      el.className       = 'number';
-      el.textContent     = NUMBERS[i];
-      el.dataset.index   = i;
-      const angle        = (i/TOTAL)*360 - 90;
-      const radius       = clock.clientWidth/2 - 40;
-      el.style.transform = 
-        `rotate(${angle}deg) translate(${radius}px) rotate(${-angle}deg)`;
-      numsCon.appendChild(el);
-    }
-    const elems = Array.from(numsCon.children);
-    let clickCount = 0;
+      // Build face
+      for (let i = 0; i < TOTAL; i++) {
+        const el = document.createElement('div');
+        el.className     = 'number';
+        el.textContent   = NUMBERS[i];
+        el.dataset.index = i;
+        const angle      = (i/TOTAL)*360 - 90;
+        const r          = clock.clientWidth/2 - 40;
+        el.style.transform = 
+          `rotate(${angle}deg) translate(${r}px) rotate(${-angle}deg)`;
+        numsCon.appendChild(el);
+      }
+      const elems = Array.from(numsCon.children);
+      let clickCount = 0;
 
-    // clock hands
-    const h = document.getElementById('hour-hand'),
-          m = document.getElementById('minute-hand'),
-          s = document.getElementById('second-hand');
-    function tick(){
-      const now = new Date(),
-            sec = now.getSeconds(),
-            min = now.getMinutes()+sec/60,
-            hr  = (now.getHours()%12)+min/60;
-      s.style.transform = `translateX(-50%) rotate(${sec*6}deg)`;
-      m.style.transform = `translateX(-50%) rotate(${min*6}deg)`;
-      h.style.transform = `translateX(-50%) rotate(${hr*30}deg)`;
-    }
-    setInterval(tick,1000);
-    tick();
+      // Clock hands
+      const h = document.getElementById('hour-hand'),
+            m = document.getElementById('minute-hand'),
+            s = document.getElementById('second-hand');
+      function tick(){
+        const now = new Date(),
+              sec = now.getSeconds(),
+              min = now.getMinutes() + sec/60,
+              hr  = (now.getHours()%12) + min/60;
+        s.style.transform = `translateX(-50%) rotate(${sec*6}deg)`;
+        m.style.transform = `translateX(-50%) rotate(${min*6}deg)`;
+        h.style.transform = `translateX(-50%) rotate(${hr*30}deg)`;
+      }
+      setInterval(tick,1000);
+      tick();
 
-    // shuffle glow colors (but do NOT reset text)
-    function shuffleColors(){
-      elems.forEach(el=>{
-        COLORS.forEach(c=>el.classList.remove('glow-'+c));
-        const col = COLORS[Math.floor(Math.random()*COLORS.length)];
-        el.classList.add('glow-'+col);
+      // Shuffle colors (but keep whatever text the user clicked)
+      function shuffleColors(){
+        elems.forEach(el=>{
+          COLORS.forEach(c=>el.classList.remove('glow-'+c));
+          const col = COLORS[Math.floor(Math.random()*COLORS.length)];
+          el.classList.add('glow-'+col);
+        });
+      }
+      shuffleColors();
+      setInterval(shuffleColors, CONFIG.colorInterval);
+
+      // Click → cycle that color’s symbols
+      numsCon.addEventListener('click', e => {
+        const el = e.target.closest('.number');
+        if (!el) return;
+        clickCount++;
+        // find its glow color
+        const glow = [...el.classList].find(c=>c.startsWith('glow-'));
+        const color = glow.split('-')[1];
+        const arr   = SYMBOLS[color];
+        const t     = el.textContent;
+        // cycle: number → arr[0] → next …
+        let next = arr[0];
+        if (arr.includes(t)) next = arr[(arr.indexOf(t)+1)%arr.length];
+        el.textContent = next;
+
+        // count correct
+        const correct = elems.filter(x => x.textContent === TARGET).length;
+        console.log(`Clicks: ${clickCount}, Correct: ${correct}/${TOTAL}`);
+        if (correct === TOTAL) modal.classList.remove('hidden');
       });
-    }
-    shuffleColors();
-    setInterval(shuffleColors, CONFIG.colorInterval);
 
-    // click handler: cycle symbol based on current color
-    numsCon.addEventListener('click', e => {
-      const el = e.target.closest('.number');
-      if (!el) return;
-      clickCount++;
-      // find its current glow color
-      const glowClass = [...el.classList].find(c=>c.startsWith('glow-'));
-      const color     = glowClass.split('-')[1];
-      const arr       = SYMBOLS[color];
-      const txt       = el.textContent;
-      let next = arr[0];
-      if (arr.includes(txt)) {
-        next = arr[(arr.indexOf(txt)+1) % arr.length];
+      // Floating TARGET blinks
+      function spawnFloating(){
+        const node = document.createElement('div');
+        node.className   = 'floating';
+        node.textContent = TARGET;
+        // random position & scale
+        node.style.top      = Math.random()*100 + '%';
+        node.style.left     = Math.random()*100 + '%';
+        node.style.fontSize = (20 + Math.random()*60) + 'px';
+        document.body.appendChild(node);
+        // fade in + slight move
+        requestAnimationFrame(() => {
+          node.style.opacity   = 0.6;
+          node.style.transform = `translate(-50%,-50%) scale(1.2)`;
+        });
+        // fade out & remove
+        setTimeout(() => {
+          node.style.opacity = 0;
+          setTimeout(()=> node.remove(), 1000);
+        }, 2000);
       }
-      el.textContent = next;
 
-      // count correct
-      const correct = elems.filter(x => x.textContent === TARGET).length;
-      console.log(`Clicks: ${clickCount}, Correct: ${correct}/${TOTAL}`);
-
-      if (correct === TOTAL) {
-        modal.classList.remove('hidden');
-      }
-    });
-
-    // spawn floating target blinks
-    function spawnFloating(){
-      const node = document.createElement('div');
-      node.className   = 'floating';
-      node.textContent = TARGET;
-      node.style.top   = Math.random()*100 + '%';
-      node.style.left  = Math.random()*100 + '%';
-      document.body.appendChild(node);
-      // fade in
-      setTimeout(()=> node.style.opacity = 0.2, 10);
-      // fade out & remove
-      setTimeout(()=>{
-        node.style.opacity = 0;
-        setTimeout(()=> node.remove(), 500);
-      }, 2000);
-    }
-    // initial blink + recurring
-    for(let i=0; i<CONFIG.blinkCount; i++){
-      setTimeout(spawnFloating, i * 400);
-    }
-    setInterval(()=>{
-      for(let i=0; i<CONFIG.blinkCount; i++){
+      // initial bursts
+      for (let i = 0; i < CONFIG.blinkCount; i++) {
         setTimeout(spawnFloating, i * 400);
       }
-    }, CONFIG.blinkInterval);
+      // recurring
+      setInterval(() => {
+        for (let i = 0; i < CONFIG.blinkCount; i++) {
+          setTimeout(spawnFloating, i * 400);
+        }
+      }, CONFIG.blinkInterval);
 
-    // block view-source / devtools
-    document.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'F12' || (e.ctrlKey && /[UIui]/.test(e.key))) {
+      // Block view‐source / DevTools
+      document.addEventListener('contextmenu', e => {
         e.preventDefault();
         alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
-      }
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key==='F12' || (e.ctrlKey && /[UIui]/.test(e.key))) {
+          e.preventDefault();
+          alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
+        }
+      });
     });
   </script>
 </body>
