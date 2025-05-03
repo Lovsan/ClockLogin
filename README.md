@@ -18,10 +18,27 @@ A futuristic clock-based “combination lock” that challenges users to align s
 - **Cycle on click**: each glowing digit toggles through its color’s symbols  
 - **Single target symbol** (picked at random) that must occupy all 12 spots  
 - **Click counter** & **correct-count** logged to console  
-- **Custom “success” modal**:  
+- **Custom “success” modal**:
   > _taidan sit joutuu tulee pelaaman :(_  
   > _onnittelut koodin aukaisusta!_  
 - **View-source blocking**: right-click & DevTools keys disabled with a playful alert
+
+## ⚙️ Settings
+
+At the **very top** of your `script` (or in a dedicated `config.js`), include:
+
+```js
+const CONFIG = {
+  colorInterval:    5000,          // how often (ms) to reshuffle glow‐colors
+  blinkInterval:    60000,         // how often (ms) to blink the target symbol in the background
+  blinkCount:       5,             // how many times to blink when scheduled
+  onSuccess:        'message',     // 'message' | 'login' | 'callback'
+  successMessage:   'taidan sit joutuu tulee pelaaman :(\nonnittelut koodin aukaisusta!',
+  instructionsText: 'Klikkaa värejä, kun symbolit ovat kohdillaan…',
+  // If you prefer a real login form, swap onSuccess to 'login' and see the "Implementing Login" tip below.
+};```
+Tip: you can also pass ```js onSuccess: (targetSymbol) => { /* your custom callback */ }```
+to run arbitrary code when the puzzle is solved.
 
 ## Demo
 
