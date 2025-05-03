@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Advanced Secret Clock Lock</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+      background: #000; font-family: 'Orbitron', sans-serif;
+    }
+    .clock {
+      position: relative;
+      width: 300px; height: 300px;
+      border: 4px solid rgba(0,255,255,0.5);
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #111 0%, #000 80%);
+      box-shadow: inset 0 0 20px #00ffff;
+      overflow: hidden;
+    }
+    .ring {
+      position: absolute; top:0; left:0;
+      width:100%; height:100%;
+      border:6px solid rgba(0,255,255,0.3);
+      border-radius:50%; box-sizing:border-box;
+      animation: spin 30s linear infinite;
+      pointer-events: none; z-index: 1;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .numbers {
+      position: absolute; top:0; left:0;
+      width:100%; height:100%;
+      z-index: 2;
+    }
+    .number {
+      position: absolute; top:50%; left:50%;
+      transform-origin: center;
+      font-size: 20px;
+      color: #0ff;
+      text-shadow: 0 0 5px #0ff;
+      user-select: none;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: box-shadow .3s, opacity .3s;
+    }
+    .glow-red    { box-shadow: 0 0 15px #f00;    opacity:1; }
+    .glow-violet { box-shadow: 0 0 15px #ee82ee; opacity:1; }
+    .glow-green  { box-shadow: 0 0 15px #0f0;    opacity:1; }
+    .glow-yellow { box-shadow: 0 0 15px #ff0;    opacity:1; }
+
+    .hand {
+      position: absolute; bottom:50%; left:50%;
+      transform-origin: bottom;
+      transform: translateX(-50%) rotate(0deg);
+      border-radius: 5px;
+      background: #0ff;
+      z-index: 3;
+    }
+    .hour   { width: 8px;  height: 80px; }
+    .minute { width: 6px;  height:110px; }
+    .second {
+      width: 2px; height:130px;
+      background:#f0f;
+      box-shadow:0 0 8px #f0f;
+    }
+    .center-dot {
+      position:absolute; top:50%; left:50%;
+      width:16px; height:16px;
+      background:#fff; border-radius:50%;
+      transform: translate(-50%,-50%);
+      box-shadow:0 0 10px #fff;
+      z-index: 4;
+    }
+
+    /* Modal */
+    .modal {
+      position: fixed; top:0; left:0;
+      width:100%; height:100%;
+      background: rgba(0,0,0,0.8);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: #111;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #0f0;
+      text-align: center;
+    }
+    .modal-content input {
+      width: 200px; padding: 8px; margin: 8px 0;
+      border: 1px solid #0f0; border-radius: 4px;
+      background: #000; color: #0f0; font-family: inherit;
+    }
+    .modal-content button {
+      margin-top: 12px; padding: 8px 16px;
+      border: none; background: #0f0; border-radius: 4px;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 0 5px #0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="clock">
+    <div class="ring"></div>
+    <div class="numbers"></div>
+    <div class="hand hour"   id="hour-hand"></div>
+    <div class="hand minute" id="minute-hand"></div>
+    <div class="hand second" id="second-hand"></div>
+    <div class="center-dot"></div>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="login-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 style="color:#0f0;">🔒 Login</h2>
+      <input type="text" placeholder="Username" /><br/>
+      <input type="password" placeholder="Password" /><br/>
+      <button id="login-submit">Submit</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const numberArray  = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+      const colorGroups  = ['red','violet','green','yellow'];
+      const symbolSets   = {
+        red:    ['!','@','#','$'],
+        violet: ['%','^','&','*'],
+        green:  ['(',')','-','='],
+        yellow: ['+','<','>','?']
+      };
+      const total        = numberArray.length;
+      const clock        = document.querySelector('.clock');
+      const numsCon      = clock.querySelector('.numbers');
+      const loginModal   = document.getElementById('login-modal');
+
+      // pick one global target symbol
+      const allSymbols = colorGroups.flatMap(c=>symbolSets[c]);
+      const targetSymbol = allSymbols[
+        Math.floor(Math.random()*allSymbols.length)
+      ];
+      console.log('🔑 Target symbol:', targetSymbol);
+
+      // build dial
+      for (let i = 0; i < total; i++) {
+        const angle = (i/total)*360 - 90;
+        const el = document.createElement('div');
+        el.className = 'number';
+        el.textContent = numberArray[i];
+        el.dataset.index = i;
+        el.style.transform =
+          `rotate(${angle}deg) translate(${clock.clientWidth/2 - 40}px)
+           rotate(${-angle}deg)`;
+        numsCon.appendChild(el);
+      }
+      const elems = Array.from(numsCon.children);
+
+      let clickCount = 0;
+
+      // randomize colors every 5s
+      function updateColors() {
+        elems.forEach(el => {
+          // remove old glow-*
+          el.classList.remove(
+            'glow-red','glow-violet','glow-green','glow-yellow'
+          );
+          // pick new
+          const col = colorGroups[
+            Math.floor(Math.random()*colorGroups.length)
+          ];
+          el.classList.add(`glow-${col}`);
+        });
+      }
+      updateColors();
+      setInterval(updateColors, 5000);
+
+      // click handler: cycle symbol based on current color
+      numsCon.addEventListener('click', e => {
+        const el = e.target.closest('.number');
+        if (!el) return;
+        clickCount++;
+        // find current color
+        const glowClass = Array.from(el.classList)
+          .find(c=>c.startsWith('glow-'));
+        const color = glowClass.split('-')[1];
+        const symbols = symbolSets[color];
+        const txt = el.textContent;
+        let next;
+        if (!symbols.includes(txt)) {
+          next = symbols[0];
+        } else {
+          const idx = symbols.indexOf(txt);
+          next = symbols[(idx+1)%symbols.length];
+        }
+        el.textContent = next;
+
+        // count correct
+        let correct = elems.filter(x => x.textContent === targetSymbol).length;
+        console.log(`Clicks: ${clickCount}, Correct: ${correct}/${total}`);
+
+        if (correct === total) {
+          loginModal.classList.remove('hidden');
+        }
+      });
+
+      // clock hands
+      const h = document.getElementById('hour-hand');
+      const m = document.getElementById('minute-hand');
+      const s = document.getElementById('second-hand');
+      function tick() {
+        const now = new Date();
+        const sec = now.getSeconds();
+        const min = now.getMinutes()+sec/60;
+        const hr  = (now.getHours()%12)+min/60;
+        s.style.transform = `translateX(-50%) rotate(${sec*6}deg)`;
+        m.style.transform = `translateX(-50%) rotate(${min*6}deg)`;
+        h.style.transform = `translateX(-50%) rotate(${hr*30}deg)`;
+      }
+      setInterval(tick,1000);
+      tick();
+
+      // fake login
+      document.getElementById('login-submit')
+        .addEventListener('click', ()=> {
+          alert('✅ You’re in!');
+          loginModal.classList.add('hidden');
+        });
+    });
+  </script>
+</body>
+</html>
