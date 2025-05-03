@@ -36,4 +36,4 @@ A futuristic clock-based “combination lock” that challenges users to align s
 ```bash
 git clone https://github.com/Lovsan/secret-clock-lock.git
 cd secret-clock-lock
-open index.html```
+open index.html
