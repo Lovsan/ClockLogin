@@ -69,21 +69,25 @@
       border-radius:50%; transform: translate(-50%,-50%);
       box-shadow:0 0 10px #fff; z-index: 4;
     }
+
     /* Success modal */
     .modal {
-      position: fixed; top:0; left:0;
-      width:100%; height:100%;
+      position: fixed; top:0; left:0; width:100%; height:100%;
       background: rgba(0,0,0,0.8);
       display: flex; align-items: center; justify-content: center;
       z-index: 10; color: #0f0; font-size: 1.2rem;
       text-align: center; padding: 20px;
     }
     .modal.hidden { display: none; }
+
     /* Floating symbol style */
     .floating {
       position: fixed; pointer-events: none;
-      color: rgba(0,255,255,0.1); font-size: 40px;
+      color: rgba(0,255,255,0.1);
+      font-size: 40px;
       user-select: none;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
     }
   </style>
 </head>
@@ -107,26 +111,25 @@
     // ⚙️ CONFIGURATION
     const CONFIG = {
       colorInterval: 5000,      // ms between color reshuffles
-      blinkInterval: 60000,     // ms between background blinks
-      blinkCount: 5,            // how many blinks per cycle
+      blinkInterval: 15000,     // ms between background blinks
+      blinkCount:    5,         // how many blinks per cycle
     };
 
-    // symbol sets by color
     const SYMBOLS = {
       red:    ['!','@','#','$'],
       violet: ['%','^','&','*'],
       green:  ['(',')','-','='],
       yellow: ['+','<','>','?']
     };
-    const COLORS = Object.keys(SYMBOLS);
+    const COLORS  = Object.keys(SYMBOLS);
     const NUMBERS = ['12','1','2','3','4','5','6','7','8','9','10','11'];
     const TOTAL   = NUMBERS.length;
 
-    const clock = document.querySelector('.clock');
+    const clock   = document.querySelector('.clock');
     const numsCon = clock.querySelector('.numbers');
     const modal   = document.getElementById('login-modal');
 
-    // pick a single target symbol for all 12
+    // pick one target symbol for all 12
     const allSyms = COLORS.flatMap(c => SYMBOLS[c]);
     const TARGET  = allSyms[Math.floor(Math.random()*allSyms.length)];
     console.log('🔑 Target symbol:', TARGET);
@@ -134,22 +137,19 @@
     // build clock face
     for(let i=0; i<TOTAL; i++){
       const el = document.createElement('div');
-      el.className = 'number';
-      el.textContent = NUMBERS[i];
-      el.dataset.index = i;
-      const angle = (i/TOTAL)*360 - 90;
-      const r = clock.clientWidth/2 - 40;
-      el.style.transform = `
-        rotate(${angle}deg)
-        translate(${r}px)
-        rotate(${-angle}deg)
-      `;
+      el.className       = 'number';
+      el.textContent     = NUMBERS[i];
+      el.dataset.index   = i;
+      const angle        = (i/TOTAL)*360 - 90;
+      const radius       = clock.clientWidth/2 - 40;
+      el.style.transform = 
+        `rotate(${angle}deg) translate(${radius}px) rotate(${-angle}deg)`;
       numsCon.appendChild(el);
     }
     const elems = Array.from(numsCon.children);
     let clickCount = 0;
 
-    // rotate hands
+    // clock hands
     const h = document.getElementById('hour-hand'),
           m = document.getElementById('minute-hand'),
           s = document.getElementById('second-hand');
@@ -165,38 +165,38 @@
     setInterval(tick,1000);
     tick();
 
-    // shuffle glow colors
+    // shuffle glow colors (but do NOT reset text)
     function shuffleColors(){
       elems.forEach(el=>{
         COLORS.forEach(c=>el.classList.remove('glow-'+c));
         const col = COLORS[Math.floor(Math.random()*COLORS.length)];
         el.classList.add('glow-'+col);
-        // reset to number
-        el.textContent = NUMBERS[el.dataset.index];
       });
     }
     shuffleColors();
     setInterval(shuffleColors, CONFIG.colorInterval);
 
-    // handle clicks
+    // click handler: cycle symbol based on current color
     numsCon.addEventListener('click', e => {
       const el = e.target.closest('.number');
-      if(!el) return;
+      if (!el) return;
       clickCount++;
-      // get its glow color
-      const glow = [...el.classList].find(c=>c.startsWith('glow-'));
-      const color = glow.split('-')[1];
-      const arr = SYMBOLS[color];
-      const txt = el.textContent;
+      // find its current glow color
+      const glowClass = [...el.classList].find(c=>c.startsWith('glow-'));
+      const color     = glowClass.split('-')[1];
+      const arr       = SYMBOLS[color];
+      const txt       = el.textContent;
       let next = arr[0];
-      if(arr.includes(txt)){
-        next = arr[(arr.indexOf(txt)+1)%arr.length];
+      if (arr.includes(txt)) {
+        next = arr[(arr.indexOf(txt)+1) % arr.length];
       }
       el.textContent = next;
+
       // count correct
-      const correct = elems.filter(x=>x.textContent===TARGET).length;
+      const correct = elems.filter(x => x.textContent === TARGET).length;
       console.log(`Clicks: ${clickCount}, Correct: ${correct}/${TOTAL}`);
-      if(correct === TOTAL){
+
+      if (correct === TOTAL) {
         modal.classList.remove('hidden');
       }
     });
@@ -204,21 +204,25 @@
     // spawn floating target blinks
     function spawnFloating(){
       const node = document.createElement('div');
-      node.className = 'floating';
+      node.className   = 'floating';
       node.textContent = TARGET;
-      node.style.top  = Math.random()*100 + '%';
-      node.style.left = Math.random()*100 + '%';
+      node.style.top   = Math.random()*100 + '%';
+      node.style.left  = Math.random()*100 + '%';
       document.body.appendChild(node);
-      // fade in/out
-      node.animate([
-        { opacity: 0 },
-        { opacity: 0.2 },
-        { opacity: 0 }
-      ], { duration: 2000, easing: 'ease-in-out' })
-      .onfinish = () => node.remove();
+      // fade in
+      setTimeout(()=> node.style.opacity = 0.2, 10);
+      // fade out & remove
+      setTimeout(()=>{
+        node.style.opacity = 0;
+        setTimeout(()=> node.remove(), 500);
+      }, 2000);
+    }
+    // initial blink + recurring
+    for(let i=0; i<CONFIG.blinkCount; i++){
+      setTimeout(spawnFloating, i * 400);
     }
     setInterval(()=>{
-      for(let i=0;i<CONFIG.blinkCount;i++){
+      for(let i=0; i<CONFIG.blinkCount; i++){
         setTimeout(spawnFloating, i * 400);
       }
     }, CONFIG.blinkInterval);
@@ -229,7 +233,7 @@
       alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
     });
     document.addEventListener('keydown', e => {
-      if(e.key==='F12' || (e.ctrlKey && /[UIui]/.test(e.key))){
+      if (e.key === 'F12' || (e.ctrlKey && /[UIui]/.test(e.key))) {
         e.preventDefault();
         alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
       }
