@@ -127,7 +127,8 @@
 
   <div id="login-modal" class="modal hidden">
     taidan sit joutuu tulee pelaaman :(<br/>
-    onnittelut koodin aukaisusta!
+    onnittelut koodin aukaisusta!(<br/>
+    (<strong id="click-count">)Clicks used: 0(</strong>)
   </div>
 
   <script>
@@ -190,9 +191,14 @@
       el.textContent = next;
       const correct = elems.filter(x=>x.textContent===TARGET).length;
       console.log(`Clicks: ${clickCount}, Correct: ${correct}/${TOTAL}`);
-      if(correct===TOTAL)
+            if (correct === TOTAL) {
+        // update the click-count text
+        document.getElementById('click-count').textContent =
+          'Clicks used: ' + clickCount;
+        // show the modal
         document.getElementById('login-modal').classList.remove('hidden');
-    });
+            }    
+        });
 
     // Spawn floating symbols continuously
     function spawn(){
