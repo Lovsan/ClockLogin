@@ -212,6 +212,17 @@
       requestAnimationFrame(()=>span.style.opacity = span.style.opacity);
     }
     setInterval(spawn, CONFIG.spawnInterval);
+        // Block right-click / DevTools
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key==='F12' || (e.ctrlKey && /[UIui]/.test(e.key))) {
+        e.preventDefault();
+        alert('ei oo tänne mitää asiaa tulla kurkkimaan! :D');
+      }
+    });
   });
   </script>
 </body>
