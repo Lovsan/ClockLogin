@@ -135,6 +135,7 @@
       const numsCon      = clock.querySelector('.numbers');
       const loginModal   = document.getElementById('login-modal');
 
+
       // pick one global target symbol
       const allSymbols = colorGroups.flatMap(c=>symbolSets[c]);
       const targetSymbol = allSymbols[
@@ -234,6 +235,30 @@
         }
       });
     });
+    function spawnFloatingSymbol() {
+  const sym = targetSymbol; // or pick random from allSymbols
+  const el = document.createElement('div');
+  el.textContent = sym;
+  el.style.position = 'fixed';
+  el.style.top  = `${Math.random()*100}%`;
+  el.style.left = `${Math.random()*100}%`;
+  el.style.fontSize = `${20 + Math.random()*40}px`;
+  el.style.opacity = 0;
+  el.style.transition = 'opacity 0.5s ease-in-out';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.style.opacity = 0.2);
+  setTimeout(() => {
+    el.style.opacity = 0;
+    setTimeout(() => el.remove(), 500);
+  }, 2000);
+}
+// blink every CONFIG.blinkInterval:
+setInterval(() => {
+  for (let i=0; i<CONFIG.blinkCount; i++) {
+    setTimeout(spawnFloatingSymbol, i*400);
+  }
+}, CONFIG.blinkInterval);
+
   </script>
 </body>
 </html>
