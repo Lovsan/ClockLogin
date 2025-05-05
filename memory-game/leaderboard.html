@@ -1,0 +1,20 @@
+<!-- leaderboard.html updated to include webhook on page load -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Leaderboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"></head>
+<body class="bg-dark text-light">
+  <div class="container py-4"><h2 class="text-center mb-3">Leaderboard</h2>
+    <table class="table table-dark table-striped">
+      <thead><tr><th>#</th><th>User</th><th>Stage</th><th>Time(s)</th><th>Clicks</th></tr></thead>
+      <tbody id="board"></tbody>
+    </table></div>
+  <script src="assets/js/webhook.js"></script>
+  <script>
+    const scores=JSON.parse(localStorage.getItem('mm_scores')||'[]');
+    const sorted=scores.sort((a,b)=>a.time-b.time).slice(0,50);
+    const t=document.getElementById('board');
+    sorted.forEach((r,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${r.user}</td><td>${r.stage}</td><td>${Math.floor(r.time/1000)}</td><td>${r.clicks}</td>`; t.appendChild(tr); });
+  </script>
+</body>
+</html>

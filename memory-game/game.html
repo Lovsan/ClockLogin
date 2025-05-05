@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Play - MemoryMatch</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+  <div id="floating-bg"></div>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">MemoryMatch</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="leaderboard.html">Leaderboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="settings.html">Settings</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" id="logout">Logout</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div class="container py-4 text-center">
+    <div id="stage-info" class="mb-3">
+      <span>Stage: <strong id="stage-num"></strong></span> |
+      <span>Clicks: <strong id="clicks"></strong></span> |
+      <span>Time: <strong id="timer"></strong></span>
+    </div>
+    <div id="game-board" class="mx-auto"></div>
+  </div>
+  <script src="assets/js/webhook.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/game.js"></script>
+  <script>
+    if(!localStorage.getItem('mm_current')) location.href='login.html';
+    document.getElementById('logout').onclick = ()=>{ localStorage.removeItem('mm_current'); location.href='login.html'; };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
